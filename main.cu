@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
 	compute_parameters(T, M, C, Fe);
 
     printf("Simulating Electroconvection in 2D\n");
+    printf("By: Yifei Guan, University of Washington\n");
     printf("      domain size: %ux%u\n",NX,NY);
     printf("                T: %g\n",*T);
     printf("                M: %g\n",*M);
