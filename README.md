@@ -13,3 +13,5 @@ File properties => General => Excluded From Build for LBM.cu, poisson.cu
 
 For Linux:
 Please use the command in the compile.sh file
+
+Change sm_60 to the compute capability of your gpu
