@@ -1,12 +1,13 @@
 /* This code accompanies
- *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
- *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *	 Also,
- *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
- *	 
- *   Yifei Guan, Igor Novosselov
+ *   The Lattice Boltzmann Method: Principles and Practice
+ *   T. Krüger, H. Kusumaatmaja, A. Kuzmin, O. Shardt, G. Silva, E.M. Viggen
+ *   ISBN 978-3-319-44649-3 (Electronic) 
+ *        978-3-319-44647-9 (Print)
+ *   http://www.springer.com/978-3-319-44647-9
  *
- * Author: Yifei Guan
+ * This code is provided under the MIT license. See LICENSE.txt.
+ *
+ * Author: Orest Shardt
  *
  */
 #ifndef __LBM_H
@@ -24,7 +25,7 @@ double *M = (double*)malloc(sizeof(double));
 double *C = (double*)malloc(sizeof(double));
 double *Fe = (double*)malloc(sizeof(double));
 
-const unsigned int flag = 0; // if flat == 1, read previous data, otherwise initialize
+const unsigned int flag = 1; // if flat == 1, read previous data, otherwise initialize
 const int nThreads = 61; // can divide NX
 
 // define grids
@@ -40,7 +41,7 @@ __constant__ double dy = 1.0 / 100.0; //need to change according to NY and LY
 
 // define physics
 double uw_host = 0.0; // velocity of the wall
-double exf_host = 0.0;
+double exf_host = 2000.0;
 __device__ double uw;
 __device__ double exf;
 __constant__ double CFL = 0.01; // CFL = dt/dx
@@ -52,8 +53,8 @@ __constant__ double voltage = 1.0e4;
 double voltage_host;
 __constant__ double eps = 1.0e-4;
 __constant__ double diffu = 6.25e-5;
-double nu_host = 0.05;
-__device__ double nu = 0.05;
+double nu_host = 0.147;
+__device__ double nu = 0.147;
 double K_host = 2.5e-5;
 __device__ double K;
 
@@ -74,10 +75,10 @@ __constant__ double wd = 1.0 / 36.0; // diagonal weight
 __constant__ double V  = 1.0 / 12.0;
 __constant__ double VC = 1.0e-6;
 
-const unsigned int NSTEPS = 2000000;
-const unsigned int NSAVE  = NSTEPS / 20;
+const unsigned int NSTEPS = 200000;
+const unsigned int NSAVE  = NSTEPS / 10;
 const unsigned int NMSG   =  NSAVE;
-const unsigned int NDMD = 50000;
+const unsigned int NDMD = 5000000000000;
 const unsigned int printCurrent = 500;
 
 

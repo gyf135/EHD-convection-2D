@@ -1,12 +1,13 @@
 /* This code accompanies
- *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
- *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *	 Also,
- *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
- *	 
- *   Yifei Guan, Igor Novosselov
+ *   The Lattice Boltzmann Method: Principles and Practice
+ *   T. Krüger, H. Kusumaatmaja, A. Kuzmin, O. Shardt, G. Silva, E.M. Viggen
+ *   ISBN 978-3-319-44649-3 (Electronic) 
+ *        978-3-319-44647-9 (Print)
+ *   http://www.springer.com/978-3-319-44647-9
  *
- * Author: Yifei Guan
+ * This code is provided under the MIT license. See LICENSE.txt.
+ *
+ * Author: Orest Shardt
  *
  */
 #define _CRT_SECURE_NO_WARNINGS
@@ -42,7 +43,6 @@ int main(int argc, char* argv[])
 	compute_parameters(T, M, C, Fe);
 
     printf("Simulating Electroconvection in 2D\n");
-    printf("By: Yifei Guan, University of Washington\n");
     printf("      domain size: %ux%u\n",NX,NY);
     printf("                T: %g\n",*T);
     printf("                M: %g\n",*M);
@@ -107,21 +107,21 @@ int main(int argc, char* argv[])
 
 
 	// Setup the frequencies kx and ky
-	for (unsigned i = 0; i <= NX / 2; i++)
+	for (unsigned i = 0; i <= NX / 2; i = i++)
 	{
 		kx_host[i] = (double)i * 2.0 * M_PI / Lx_host;
 	}
 
-	for (unsigned i = NX / 2 + 1; i < NX; i++)
+	for (unsigned i = NX / 2 + 1; i < NX; i = i++)
 	{
 		kx_host[i] = ((double) i - NX) * 2.0 * M_PI / Lx_host;
 	}
-	for (unsigned i = 0; i <= NE / 2; i++)
+	for (unsigned i = 0; i <= NE / 2; i = i++)
 	{
 		ky_host[i] = (double)i  * 2.0 * M_PI / (NE*dy_host);
 	}
 
-	for (unsigned i = NE / 2 + 1; i < NE; i++)
+	for (unsigned i = NE / 2 + 1; i < NE; i = i++)
 	{
 		ky_host[i] = ((double)i - NE) * 2.0 * M_PI / (NE*dy_host);
 	}
@@ -215,8 +215,9 @@ int main(int argc, char* argv[])
 			printf("Iteration: %u, physical time: %g.\n", i, t);
 			// save for MATLAB postprocessing
 			char filename[128];
-			sprintf(filename, "%g.dat", t);
-			FILE *fout2 = fopen(filename, "wb+");
+			//sprintf(filename, "%g.dat", t);
+			sprintf(filename, "charge_data");
+			FILE *fout2 = fopen(filename, "ab");
 			save_data_dmd(fout2, t, ux_gpu, uy_gpu, charge_gpu, phi_gpu);
 			fclose(fout2);
 		}

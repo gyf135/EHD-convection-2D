@@ -1,12 +1,13 @@
 /* This code accompanies
- *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
- *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *	 Also,
- *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
- *	 
- *   Yifei Guan, Igor Novosselov
+ *   The Lattice Boltzmann Method: Principles and Practice
+ *   T. Krüger, H. Kusumaatmaja, A. Kuzmin, O. Shardt, G. Silva, E.M. Viggen
+ *   ISBN 978-3-319-44649-3 (Electronic) 
+ *        978-3-319-44647-9 (Print)
+ *   http://www.springer.com/978-3-319-44647-9
  *
- * Author: Yifei Guan
+ * This code is provided under the MIT license. See LICENSE.txt.
+ *
+ * Author: Orest Shardt
  *
  */
 #include <stdio.h>
@@ -258,8 +259,8 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	// useful constants
 	double omega_plus = 1.0 / (nu / cs_square / dt + 1.0 / 2.0) / dt;
 	double omega_minus = 1.0 / (V / (nu / cs_square / dt) + 1.0 / 2.0) / dt;
-	double omega_c_minus = 1.0 / (diffu / cs_square / dt + 1.0 / 2.0) / dt;
-	double omega_c_plus = 1.0 / (VC / (diffu / cs_square / dt) + 1.0 / 2.0) / dt;
+	double omega_c_plus = 1.0 / (diffu / cs_square / dt + 1.0 / 2.0) / dt;
+	double omega_c_minus = 1.0 / (VC / (diffu / cs_square / dt) + 1.0 / 2.0) / dt;
 
 	unsigned int y = blockIdx.y;
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
@@ -295,7 +296,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	double charge = ht0 + ht1 + ht2 + ht3 + ht4 + ht5 + ht6 + ht7 + ht8;
 	double Ex = ex[gpu_scalar_index(x, y)];
 	double Ey = ey[gpu_scalar_index(x, y)];
-	double forcex = charge * Ex;
+	double forcex = charge * Ex + exf;
 	double forcey = charge * Ey;
 
 	double ux = rhoinv*((ft1 + ft5 + ft8 - (ft3 + ft6 + ft7)) / CFL + forcex*dt*0.5);
@@ -335,7 +336,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 			double chargem = htm0 + htm1 + htm2 + htm3 + htm4 + htm5 + htm6 + htm7 + htm8;
 			double Exm = ex[gpu_scalar_index(x, 1)];
 			double Eym = ey[gpu_scalar_index(x, 1)];
-			double forcexm = charge * Ex;
+			double forcexm = charge * Ex + exf;
 			double forceym = charge * Ey;
 
 			ux = -rhoinvm*((ftm1 + ftm5 + ftm8 - (ftm3 + ftm6 + ftm7)) / CFL + forcexm*dt*0.5);
@@ -618,10 +619,7 @@ __global__ void gpu_boundary(double *f0, double *f1, double *f2, double *h0, dou
 {
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y;
-	
-	// set perturb = 0
-	perturb = 0;
-	
+
 	// Boundary conditions
 	double multis = 2.0*rho0*uw / cs_square * ws / CFL;
 	double multid = 2.0*rho0*uw / cs_square * wd / CFL;
@@ -714,6 +712,8 @@ __global__ void gpu_bc_charge(double *h0, double *h1, double *h2)
 {
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y;
+
+	perturb = 0;
 
 	if (y == 0) {
 		double multi0c = 2.0*charge0*w0;
@@ -826,6 +826,25 @@ void save_data_tecplot(FILE *fout, double time, double *rho_gpu, double *charge_
 	double *Ey     = (double*)malloc(mem_size_scalar);
 	double dx_host;
 	double dy_host;
+	double *rhodx = (double*)malloc(mem_size_scalar);
+	double *rhody = (double*)malloc(mem_size_scalar);
+	double *curlForce = (double*)malloc(mem_size_scalar);
+	double *vor = (double*)malloc(mem_size_scalar);
+	double *vor_diff = (double*)malloc(mem_size_scalar);
+	double X = 1000;
+	double Re = 170.07/100;
+	double extu=0.25;
+
+	//Re = uw_host / nu_host;
+	extu = exf_host * 0.5 * 0.5 * 0.5 / (nu_host * 1600);
+
+	Re = extu / nu_host;
+
+	X = 100000 / 1600 / (extu * extu);
+
+
+	printf("X = %g and Re = %g.\n", X, Re);
+
 	// transfer memory from GPU to host
 	checkCudaErrors(cudaMemcpy(rho,    rho_gpu, mem_size_scalar, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(charge, charge_gpu, mem_size_scalar, cudaMemcpyDeviceToHost));
@@ -836,36 +855,118 @@ void save_data_tecplot(FILE *fout, double time, double *rho_gpu, double *charge_
 	checkCudaErrors(cudaMemcpy(Ey,     Ey_gpu, mem_size_scalar, cudaMemcpyDeviceToHost));
 	cudaMemcpyFromSymbol(&dx_host, dx, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&dy_host, dy, sizeof(double), 0, cudaMemcpyDeviceToHost);
+
 	
 	
-	// apply boundary conditions (upper and lower plate)
-	for (unsigned int x = 0; x < NX; ++x) {
-		rho[scalar_index(x, 0)]         = 2.0*rho[scalar_index(x, 1)] - rho[scalar_index(x, 2)];
-		charge[scalar_index(x, 0)]      = 2.0*charge[scalar_index(x, 1)] - charge[scalar_index(x, 2)];
-		ux[scalar_index(x, 0)]          = 2.0*ux[scalar_index(x, 1)] - ux[scalar_index(x, 2)];
-		//uy[scalar_index(x, 0)]          = 2.0*uy[scalar_index(x, 1)] - uy[scalar_index(x, 2)];
-		rho[scalar_index(x, NY - 1)]    = 2.0*rho[scalar_index(x, NY - 2)] - rho[scalar_index(x, NY - 3)];
-		charge[scalar_index(x, NY - 1)] = 2.0*charge[scalar_index(x, NY - 2)] - charge[scalar_index(x, NY - 3)];
-		ux[scalar_index(x, NY - 1)]     = 2.0*ux[scalar_index(x, NY - 2)] - ux[scalar_index(x, NY - 3)];
-		uy[scalar_index(x, NY - 1)]     = 2.0*uy[scalar_index(x, NY - 2)] - uy[scalar_index(x, NY - 3)];
+	for (unsigned int y = 1; y < NY - 1; ++y)
+	{
+		for (unsigned int x = 1; x < NX - 1; ++x)
+		{
+			rhodx[scalar_index(x, y)] = (charge[scalar_index(x + 1, y)] - charge[scalar_index(x - 1, y)]) / dx_host / 2;
+			rhody[scalar_index(x, y)] = (charge[scalar_index(x, y + 1)] - charge[scalar_index(x, y - 1)]) / dy_host / 2;
+		}
 	}
 
-	if (first)
+	for (unsigned int y = 1; y < NY - 1; ++y)
 	{
-		char str[] = "VARIABLES=\"x\",\"y\",\"u\",\"v\",\"p\",\"charge\",\"phi\",\"Ex\",\"Ey\"";
-		fprintf(fout, "%s\n", str);
+		rhodx[scalar_index(0, y)] = (charge[scalar_index(1, y)] - charge[scalar_index(NX-1, y)]) / dx_host / 2;
+		rhodx[scalar_index(NX - 1, y)] = (charge[scalar_index(0, y)] - charge[scalar_index(NX - 2, y)]) / dx_host / 2;
+		rhody[scalar_index(0, y)] = (charge[scalar_index(0, y + 1)] - charge[scalar_index(0, y - 1)]) / dy_host / 2;
+		rhody[scalar_index(NX - 1, y)] = (charge[scalar_index(NX - 1, y + 1)] - charge[scalar_index(NX - 1, y - 1)]) / dy_host / 2;
 	}
-	fprintf(fout, "\n");
-	fprintf(fout, "ZONE T=\"t=%g\", F=POINT, I = %d, J = %d\n", time, NX, NY);
+
+
+
+	for (unsigned int y = 1; y < NY - 1; ++y)
+	{
+		for (unsigned int x = 1; x < NX - 1; ++x)
+		{
+			vor[scalar_index(x, y)] = (uy[scalar_index(x + 1, y)] - uy[scalar_index(x - 1, y)]) / dx_host / 2 - (ux[scalar_index(x, y + 1)] - ux[scalar_index(x, y - 1)]) / dy_host / 2;
+		}
+	}
+
+	for (unsigned int y = 1; y < NY - 1; ++y)
+	{
+		vor[scalar_index(0, y)] = (uy[scalar_index(1, y)] - uy[scalar_index(NX-1, y)]) / dx_host / 2 - (ux[scalar_index(0, y + 1)] - ux[scalar_index(0, y - 1)]) / dy_host / 2;
+		vor[scalar_index(NX-1, y)] = (uy[scalar_index(0, y)] - uy[scalar_index(NX-2, y)]) / dx_host / 2 - (ux[scalar_index(NX-1, y + 1)] - ux[scalar_index(NX-1, y - 1)]) / dy_host / 2;
+	}
+
+
+	for (unsigned int y = 2; y < NY - 4; ++y)
+	{
+		for (unsigned int x = 1; x < NX - 1; ++x)
+		{
+			vor_diff[scalar_index(x, y)] = (vor[scalar_index(x + 1, y)] + vor[scalar_index(x, y + 1)] + vor[scalar_index(x - 1, y)] + vor[scalar_index(x, y - 1)] - 4 * vor[scalar_index(x, y)]) / (dy_host*dy_host);
+		}
+	}
+
+	for (unsigned int y = 1; y < NY - 2; ++y)
+	{
+		vor_diff[scalar_index(0, y)] = (vor[scalar_index(1, y)] + vor[scalar_index(0, y + 1)] + vor[scalar_index(NX-1, y)] + vor[scalar_index(0, y - 1)] - 4 * vor[scalar_index(0, y)]) / (dy_host*dy_host);
+
+		vor_diff[scalar_index(NX - 1, y)] = (vor[scalar_index(0, y)] + vor[scalar_index(NX-1, y + 1)] + vor[scalar_index(NX-2, y)] + vor[scalar_index(NX-1, y - 1)] - 4 * vor[scalar_index(NX-1, y)]) / (dy_host*dy_host);
+	}
+
+
+
+
+
+	// apply boundary conditions (upper and lower plate)
+	for (unsigned int x = 0; x < NX; ++x) {
+		rho[scalar_index(x, 0)] = 2.0*rho[scalar_index(x, 1)] - rho[scalar_index(x, 2)];
+		charge[scalar_index(x, 0)] = 2.0*charge[scalar_index(x, 1)] - charge[scalar_index(x, 2)];
+		ux[scalar_index(x, 0)] = 2.0*ux[scalar_index(x, 1)] - ux[scalar_index(x, 2)];
+		uy[scalar_index(x, 0)] = 2.0*uy[scalar_index(x, 1)] - uy[scalar_index(x, 2)];
+		rhodx[scalar_index(x, 0)] = 2.0*rhodx[scalar_index(x, 1)] - rhodx[scalar_index(x, 2)];
+		rhody[scalar_index(x, 0)] = 2.0*rhody[scalar_index(x, 1)] - rhody[scalar_index(x, 2)];
+		vor[scalar_index(x, 0)] = 2.0*vor[scalar_index(x, 1)] - vor[scalar_index(x, 2)];
+		vor_diff[scalar_index(x, 1)] = vor_diff[scalar_index(x, 2)];
+		vor_diff[scalar_index(x, 0)] = vor_diff[scalar_index(x, 1)];
+
+
+		rho[scalar_index(x, NY - 1)] = 2.0*rho[scalar_index(x, NY - 2)] - rho[scalar_index(x, NY - 3)];
+		charge[scalar_index(x, NY - 1)] = 2.0*charge[scalar_index(x, NY - 2)] - charge[scalar_index(x, NY - 3)];
+		ux[scalar_index(x, NY - 1)] = 2.0*ux[scalar_index(x, NY - 2)] - ux[scalar_index(x, NY - 3)];
+		uy[scalar_index(x, NY - 1)] = 2.0*uy[scalar_index(x, NY - 2)] - uy[scalar_index(x, NY - 3)];
+		rhodx[scalar_index(x, NY - 1)] = 2.0*rhodx[scalar_index(x, NY - 2)] - rhodx[scalar_index(x, NY - 3)];
+		rhody[scalar_index(x, NY - 1)] = 2.0*rhody[scalar_index(x, NY - 2)] - rhody[scalar_index(x, NY - 3)];
+		vor[scalar_index(x, NY - 1)] = 2.0*vor[scalar_index(x, NY - 2)] - vor[scalar_index(x, NY - 3)];
+		
+		vor_diff[scalar_index(x, NY - 4)] = vor_diff[scalar_index(x, NY - 5)];
+		vor_diff[scalar_index(x, NY - 3)] = vor_diff[scalar_index(x, NY - 4)];
+
+		vor_diff[scalar_index(x, NY - 2)] = vor_diff[scalar_index(x, NY - 3)];
+		vor_diff[scalar_index(x, NY - 1)] = vor_diff[scalar_index(x, NY - 2)];
+
+	}
 
 	for (unsigned int y = 0; y < NY; ++y)
 	{
 		for (unsigned int x = 0; x < NX; ++x)
 		{
+			curlForce[scalar_index(x, y)] = rhodx[scalar_index(x, y)] * Ey[scalar_index(x, y)] - rhody[scalar_index(x, y)] * Ex[scalar_index(x, y)];
+			curlForce[scalar_index(x, y)] = curlForce[scalar_index(x, y)] / 1e5;  // Non-dimensionlize
+			vor[scalar_index(x, y)] = vor[scalar_index(x, y)] / extu;// *4;  // Non-dimensionlize
+			vor_diff[scalar_index(x, y)] = vor_diff[scalar_index(x, y)] / extu;// *4;  // Non-dimensionlize
+		}
+	}
+
+	if (first)
+	{
+		char str[] = "VARIABLES=\"x\",\"y\",\"u\",\"v\",\"p\",\"charge\",\"phi\",\"Ex\",\"Ey\",\"vorticity\",\"curlForce\",\"vorticity_diff\",\"XcurlForce\"";
+		fprintf(fout, "%s\n", str);
+	}
+	fprintf(fout, "\n");
+	fprintf(fout, "ZONE T=\"t=%g\", F=POINT, I = %d, J = %d\n", time, NX, NY-10);
+
+	for (unsigned int y = 5; y < NY-5; ++y)
+	{
+		for (unsigned int x = 0; x < NX; ++x)
+		{
 			//double data[] = { dx*x, dy*y, u[scalar_index(x, y)], v[scalar_index(x, y)], r[scalar_index(x, y)], c[scalar_index(x, y)], fi[scalar_index(x, y)], ex[scalar_index(x, y)], ey[scalar_index(x, y)] };
-			fprintf(fout, "%g %g %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f\n", dx_host*x, dy_host*y,
+			fprintf(fout, "%g %g %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f %10.12f\n", dx_host*x, dy_host*y,
 				ux[scalar_index(x, y)], uy[scalar_index(x, y)], rho[scalar_index(x, y)], charge[scalar_index(x, y)], 
-				phi[scalar_index(x, y)], Ex[scalar_index(x, y)], Ey[scalar_index(x, y)]);
+				phi[scalar_index(x, y)], Ex[scalar_index(x, y)], Ey[scalar_index(x, y)], vor[scalar_index(x, y)], curlForce[scalar_index(x, y)], 1/Re*vor_diff[scalar_index(x, y)], X*curlForce[scalar_index(x, y)]);
 			//printf("X is %g and Y is %g\n", dx_host*x, dy_host*y);
 		}
 	}
@@ -946,7 +1047,8 @@ void save_data_dmd(FILE *fend, double time, double *ux_gpu, double *uy_gpu, doub
 		{
 			for (unsigned int x = 0; x < NX; ++x)
 			{
-				fprintf(fend, "%10.6f %10.6f %10.6f %10.6f %10.6f\n", time, ux[scalar_index(x, y)], uy[scalar_index(x, y)], ch[scalar_index(x, y)], fi[scalar_index(x, y)]);
+				//fprintf(fend, "%10.6f %10.6f %10.6f %10.6f %10.6f\n", time, ux[scalar_index(x, y)], uy[scalar_index(x, y)], ch[scalar_index(x, y)], fi[scalar_index(x, y)]);
+				fprintf(fend, "%10.6f \n", ch[scalar_index(x, y)]);
 			}
 		}
 	free(uy);
