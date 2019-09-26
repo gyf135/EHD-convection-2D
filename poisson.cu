@@ -1,10 +1,14 @@
-/*
-*   The Lattice Boltzmann Method with EHD convection
-*   Yifei Guan
-*   NRG lab, University of Washington
-*   Oct/17/2018
-*
-*/
+/* This code accompanies
+ *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
+ *	 https://doi.org/10.1016/j.jcp.2019.07.029
+ *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *	 
+ *   Yifei Guan, Igor Novosselov
+ * 	 University of Washington
+ *
+ * Author: Yifei Guan
+ *
+ */
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
