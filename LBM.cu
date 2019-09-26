@@ -618,7 +618,10 @@ __global__ void gpu_boundary(double *f0, double *f1, double *f2, double *h0, dou
 {
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y;
-
+	
+	// set perturb = 0
+	perturb = 0;
+	
 	// Boundary conditions
 	double multis = 2.0*rho0*uw / cs_square * ws / CFL;
 	double multid = 2.0*rho0*uw / cs_square * wd / CFL;
