@@ -1,10 +1,10 @@
 /* This code accompanies
  *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
  *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *	 Also,
- *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
  *	 
  *   Yifei Guan, Igor Novosselov
+ * 	 University of Washington
  *
  * Author: Yifei Guan
  *
@@ -42,7 +42,6 @@ int main(int argc, char* argv[])
 	compute_parameters(T, M, C, Fe);
 
     printf("Simulating Electroconvection in 2D\n");
-    printf("By: Yifei Guan, University of Washington\n");
     printf("      domain size: %ux%u\n",NX,NY);
     printf("                T: %g\n",*T);
     printf("                M: %g\n",*M);
@@ -215,8 +214,9 @@ int main(int argc, char* argv[])
 			printf("Iteration: %u, physical time: %g.\n", i, t);
 			// save for MATLAB postprocessing
 			char filename[128];
-			sprintf(filename, "%g.dat", t);
-			FILE *fout2 = fopen(filename, "wb+");
+			//sprintf(filename, "%g.dat", t);
+			sprintf(filename, "charge_data");
+			FILE *fout2 = fopen(filename, "ab");
 			save_data_dmd(fout2, t, ux_gpu, uy_gpu, charge_gpu, phi_gpu);
 			fclose(fout2);
 		}
