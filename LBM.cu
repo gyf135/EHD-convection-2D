@@ -1,13 +1,12 @@
 /* This code accompanies
- *   The Lattice Boltzmann Method: Principles and Practice
- *   T. Krüger, H. Kusumaatmaja, A. Kuzmin, O. Shardt, G. Silva, E.M. Viggen
- *   ISBN 978-3-319-44649-3 (Electronic) 
- *        978-3-319-44647-9 (Print)
- *   http://www.springer.com/978-3-319-44647-9
+ *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
+ *	 https://doi.org/10.1016/j.jcp.2019.07.029
+ *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *	 
+ *   Yifei Guan, Igor Novosselov
+ * 	 University of Washington
  *
- * This code is provided under the MIT license. See LICENSE.txt.
- *
- * Author: Orest Shardt
+ * Author: Yifei Guan
  *
  */
 #include <stdio.h>
@@ -259,8 +258,8 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	// useful constants
 	double omega_plus = 1.0 / (nu / cs_square / dt + 1.0 / 2.0) / dt;
 	double omega_minus = 1.0 / (V / (nu / cs_square / dt) + 1.0 / 2.0) / dt;
-	double omega_c_plus = 1.0 / (diffu / cs_square / dt + 1.0 / 2.0) / dt;
-	double omega_c_minus = 1.0 / (VC / (diffu / cs_square / dt) + 1.0 / 2.0) / dt;
+	double omega_c_minus = 1.0 / (diffu / cs_square / dt + 1.0 / 2.0) / dt;
+	double omega_c_plus = 1.0 / (VC / (diffu / cs_square / dt) + 1.0 / 2.0) / dt;
 
 	unsigned int y = blockIdx.y;
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
