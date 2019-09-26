@@ -107,21 +107,21 @@ int main(int argc, char* argv[])
 
 
 	// Setup the frequencies kx and ky
-	for (unsigned i = 0; i <= NX / 2; i = i++)
+	for (unsigned i = 0; i <= NX / 2; i++)
 	{
 		kx_host[i] = (double)i * 2.0 * M_PI / Lx_host;
 	}
 
-	for (unsigned i = NX / 2 + 1; i < NX; i = i++)
+	for (unsigned i = NX / 2 + 1; i < NX; i++)
 	{
 		kx_host[i] = ((double) i - NX) * 2.0 * M_PI / Lx_host;
 	}
-	for (unsigned i = 0; i <= NE / 2; i = i++)
+	for (unsigned i = 0; i <= NE / 2; i++)
 	{
 		ky_host[i] = (double)i  * 2.0 * M_PI / (NE*dy_host);
 	}
 
-	for (unsigned i = NE / 2 + 1; i < NE; i = i++)
+	for (unsigned i = NE / 2 + 1; i < NE; i++)
 	{
 		ky_host[i] = ((double)i - NE) * 2.0 * M_PI / (NE*dy_host);
 	}
