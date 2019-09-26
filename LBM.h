@@ -1,7 +1,7 @@
 /* This code accompanies
  *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
  *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
  *	 
  *   Yifei Guan, Igor Novosselov
  * 	 University of Washington
@@ -24,7 +24,7 @@ double *M = (double*)malloc(sizeof(double));
 double *C = (double*)malloc(sizeof(double));
 double *Fe = (double*)malloc(sizeof(double));
 
-const unsigned int flag = 1; // if flat == 1, read previous data, otherwise initialize
+const unsigned int flag = 0; // if flat == 1, read previous data, otherwise initialize
 const int nThreads = 61; // can divide NX
 
 // define grids
