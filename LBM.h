@@ -40,7 +40,7 @@ __constant__ double dy = 1.0 / 100.0; //need to change according to NY and LY
 
 // define physics
 double uw_host = 0.0; // velocity of the wall
-double exf_host = 2000.0;
+double exf_host = 0.0;
 __device__ double uw;
 __device__ double exf;
 __constant__ double CFL = 0.01; // CFL = dt/dx
