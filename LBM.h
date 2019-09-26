@@ -1,7 +1,7 @@
 /* This code accompanies
  *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
  *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
  *	 
  *   Yifei Guan, Igor Novosselov
  * 	 University of Washington
@@ -24,7 +24,7 @@ double *M = (double*)malloc(sizeof(double));
 double *C = (double*)malloc(sizeof(double));
 double *Fe = (double*)malloc(sizeof(double));
 
-const unsigned int flag = 0; // if flat == 1, read previous data, otherwise initialize
+const unsigned int flag = 1; // if flat == 1, read previous data, otherwise initialize
 const int nThreads = 61; // can divide NX
 
 // define grids
@@ -52,8 +52,8 @@ __constant__ double voltage = 1.0e4;
 double voltage_host;
 __constant__ double eps = 1.0e-4;
 __constant__ double diffu = 6.25e-5;
-double nu_host = 0.147;
-__device__ double nu = 0.147;
+double nu_host = 0.08;
+__device__ double nu = 0.08;
 double K_host = 2.5e-5;
 __device__ double K;
 
@@ -74,11 +74,11 @@ __constant__ double wd = 1.0 / 36.0; // diagonal weight
 __constant__ double V  = 1.0 / 12.0;
 __constant__ double VC = 1.0e-6;
 
-const unsigned int NSTEPS = 200000;
-const unsigned int NSAVE  = NSTEPS / 10;
+const unsigned int NSTEPS = 40000000;
+const unsigned int NSAVE  = NSTEPS / 50;
 const unsigned int NMSG   =  NSAVE;
-const unsigned int NDMD = 5000000000000;
-const unsigned int printCurrent = 500;
+const unsigned int NDMD = 200;
+const unsigned int printCurrent = 5000;
 
 
 // physical time
@@ -123,7 +123,7 @@ void extract(double*, cufftDoubleComplex*);
 
 double current(double*, double*);
 void record_umax(FILE*, double, double*, double*);
-void save_data_dmd(FILE*, double, double*, double*, double*, double*);
+void save_data_dmd(FILE*, double, double*, double*, double*, double*, int);
 
 inline size_t scalar_index(unsigned int x, unsigned int y)
 {

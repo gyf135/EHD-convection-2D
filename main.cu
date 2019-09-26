@@ -1,10 +1,9 @@
 /* This code accompanies
  *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
  *	 https://doi.org/10.1016/j.jcp.2019.07.029
- *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+ *	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
  *	 
  *   Yifei Guan, Igor Novosselov
- * 	 University of Washington
  *
  * Author: Yifei Guan
  *
@@ -217,8 +216,14 @@ int main(int argc, char* argv[])
 			//sprintf(filename, "%g.dat", t);
 			sprintf(filename, "charge_data");
 			FILE *fout2 = fopen(filename, "ab");
-			save_data_dmd(fout2, t, ux_gpu, uy_gpu, charge_gpu, phi_gpu);
+			save_data_dmd(fout2, t, ux_gpu, uy_gpu, charge_gpu, phi_gpu, 0);
+			
+			sprintf(filename, "vorticity");
+			FILE *fout3 = fopen(filename, "ab");
+			save_data_dmd(fout3, t, ux_gpu, uy_gpu, charge_gpu, phi_gpu, 1);
+			
 			fclose(fout2);
+			fclose(fout3);
 		}
 		if (i%printCurrent == 1) {
 			checkCudaErrors(cudaMemcpy(charge_host, charge_gpu, mem_size_scalar, cudaMemcpyDeviceToHost));
