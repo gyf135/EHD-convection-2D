@@ -2,7 +2,7 @@
  *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
  *	 https://doi.org/10.1016/j.jcp.2019.07.029
  *   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
- *	 
+ *	 https://doi.org/10.1103/PhysRevFluids.4.103701
  *   Yifei Guan, Igor Novosselov
  * 	 University of Washington
  *
