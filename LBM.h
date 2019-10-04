@@ -16,7 +16,7 @@
 
 __device__ double test;
 
-__device__ int perturb = 0;
+__device__ int perturb = 0; // Change to 1 to apply finite amplitude perturbation
 
 int iteractionCount = 0;
 double *T = (double*)malloc(sizeof(double));
