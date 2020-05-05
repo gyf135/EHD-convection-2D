@@ -711,6 +711,8 @@ __global__ void gpu_bc_charge(double *h0, double *h1, double *h2)
 {
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y;
+	
+	perturb = 0;
 
 	if (y == 0) {
 		double multi0c = 2.0*charge0*w0;
